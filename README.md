@@ -48,20 +48,25 @@ New signups default to `crew`; the first owner is created by the seed script.
 
 ### 2. Run the database migrations
 
-The SQL lives in [`supabase/migrations/`](supabase/migrations). Run the files
-**in order** (0001 → 0004).
+The SQL lives in [`supabase/migrations/`](supabase/migrations), applied in
+filename (timestamp) order.
 
-**Easiest (no tools):** open the Supabase dashboard → **SQL Editor** → **New
-query**, paste the contents of each migration file in numeric order, and run
-each one.
+**This project uses the Supabase GitHub integration.** With the project
+connected to this repo (Project → Integrations → GitHub, "Deploy to
+production" on, production branch `main`), Supabase automatically applies any
+new migrations when changes land on `main`. So the normal workflow is just:
+commit a migration and merge to `main`.
 
-**Or with the Supabase CLI:**
+**Manual alternative (CLI):**
 
 ```bash
 npm i -g supabase
 supabase link --project-ref <your-project-ref>
 supabase db push
 ```
+
+> Do not also paste the SQL by hand in the SQL Editor — that would double-apply
+> and desync the migration history the integration tracks.
 
 ### 3. Configure environment variables
 
