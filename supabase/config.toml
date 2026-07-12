@@ -3,3 +3,6 @@
 # project_id is the project ref (public — appears in the project URL); it is
 # not a secret.
 project_id = "jicgjfxxofngzceavlym"
+
+# Migrations in supabase/migrations/ are applied to the production database
+# automatically when changes merge into main (Supabase GitHub integration).
