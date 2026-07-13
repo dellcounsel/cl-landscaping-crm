@@ -34,6 +34,29 @@ const supabase = createClient(url, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Run a Supabase write and retry while PostgREST reports a stale schema cache
+ * (PGRST205 "Could not find the table … in the schema cache"). Newly created
+ * tables can take a short while to appear in the REST cache, especially during
+ * a Supabase incident. Non-cache errors fail fast.
+ */
+async function withRetry(fn, label, attempts = 12, delayMs = 5000) {
+  for (let i = 1; i <= attempts; i++) {
+    const { error } = await fn();
+    if (!error) return;
+    const cacheMiss =
+      error.code === "PGRST205" ||
+      (error.message ?? "").includes("schema cache");
+    if (!cacheMiss || i === attempts) throw error;
+    console.log(
+      `  ${label}: schema cache not ready yet, retrying (${i}/${attempts})…`,
+    );
+    await sleep(delayMs);
+  }
+}
+
 async function ensureOwner() {
   // Look for an existing user with this email (paged list, first page is enough
   // for a small team).
@@ -63,11 +86,14 @@ async function ensureOwner() {
 
   // The handle_new_user trigger inserts a profile with role 'crew'; promote to
   // owner and set the name.
-  const { error: profErr } = await supabase
-    .from("profiles")
-    .update({ role: "owner", full_name: ownerName })
-    .eq("id", user.id);
-  if (profErr) throw profErr;
+  await withRetry(
+    () =>
+      supabase
+        .from("profiles")
+        .update({ role: "owner", full_name: ownerName })
+        .eq("id", user.id),
+    "profiles",
+  );
   console.log("Promoted profile to owner.");
 }
 
@@ -127,17 +153,27 @@ const DEMO_PRICE_ITEMS = [
 async function seedClients() {
   // Idempotent by name: delete demo clients with these names first.
   const names = DEMO_CLIENTS.map((c) => c.name);
-  await supabase.from("clients").delete().in("name", names);
-  const { error } = await supabase.from("clients").insert(DEMO_CLIENTS);
-  if (error) throw error;
+  await withRetry(
+    () => supabase.from("clients").delete().in("name", names),
+    "clients",
+  );
+  await withRetry(
+    () => supabase.from("clients").insert(DEMO_CLIENTS),
+    "clients",
+  );
   console.log(`Seeded ${DEMO_CLIENTS.length} clients.`);
 }
 
 async function seedPriceItems() {
   const names = DEMO_PRICE_ITEMS.map((p) => p.name);
-  await supabase.from("price_items").delete().in("name", names);
-  const { error } = await supabase.from("price_items").insert(DEMO_PRICE_ITEMS);
-  if (error) throw error;
+  await withRetry(
+    () => supabase.from("price_items").delete().in("name", names),
+    "price_items",
+  );
+  await withRetry(
+    () => supabase.from("price_items").insert(DEMO_PRICE_ITEMS),
+    "price_items",
+  );
   console.log(`Seeded ${DEMO_PRICE_ITEMS.length} price items.`);
 }
 

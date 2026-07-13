@@ -43,3 +43,6 @@ next-env.d.ts
 
 # unrelated business documents kept in this folder (not part of the app)
 *.docx
+
+# one-off generated seed SQL (contains the owner's real login email)
+scripts/seed.sql

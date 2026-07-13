@@ -6,13 +6,13 @@ Supabase + Resend) and optimized for use on a phone in the field.
 
 ## Status
 
-Milestone-based build. **M1 is complete.**
+Milestone-based build. **M1 and M2 are complete.**
 
 | Milestone | Scope | Status |
 |-----------|-------|--------|
 | **M1** | Auth, roles, app shell, Clients, Price list | ✅ Done |
-| M2 | Quotes + email + public approval page | ⬜ Next |
-| M3 | Jobs + recurrence engine + Today view | ⬜ |
+| **M2** | Quotes + email + public approval page | ✅ Done |
+| M3 | Jobs + recurrence engine + Today view | ⬜ Next |
 | M4 | Google Calendar sync | ⬜ |
 | M5 | Invoices + payments + dashboard | ⬜ |
 | M6 | Polish, seed, docs | ⬜ |
@@ -111,6 +111,23 @@ with your seeded owner email/password.
    `https://fieldbook.vercel.app`).
 4. Deploy. Run the migrations against your Supabase project (step 2) if you
    haven't already.
+
+## Email (Resend) — optional, for sending quotes
+
+Quotes work **without** email: sending a quote always produces a public
+approval link you can copy and share. Configure Resend to also email quotes to
+clients and notify yourself on approve/decline.
+
+1. Create a free account at <https://resend.com> and an **API key** →
+   `RESEND_API_KEY`.
+2. Set `BUSINESS_NAME` (shown on quotes/emails) and `OWNER_NOTIFY_EMAIL` (where
+   approve/decline alerts go).
+3. **Sender address (`EMAIL_FROM`):** until you verify a domain, Resend only
+   lets you email **your own account address** from `onboarding@resend.dev`
+   (fine for testing). To email real clients, verify your domain in Resend
+   (Domains → Add) and set `EMAIL_FROM` to e.g.
+   `Dellavalle Landscaping <quotes@yourdomain.com>`.
+4. Add the same vars in Vercel → redeploy.
 
 ## Notes
 
