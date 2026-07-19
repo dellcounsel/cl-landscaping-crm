@@ -13,6 +13,7 @@ import {
   setQuoteStatusAction,
   deleteQuoteAction,
 } from "../actions";
+import { convertQuoteToJob } from "../../jobs/actions";
 
 export default async function QuoteDetailPage({
   params,
@@ -117,6 +118,17 @@ export default async function QuoteDetailPage({
           <p className="text-sm text-green-700 dark:text-green-400">
             Approved by client on {formatDateTime(quote.approved_at)}
           </p>
+        )}
+
+        {quote.status === "approved" && (
+          <form action={convertQuoteToJob.bind(null, id)}>
+            <SubmitButton
+              pendingLabel="Creating job…"
+              className="h-12 w-full rounded-lg bg-green-700 text-base font-semibold text-white hover:bg-green-800 active:bg-green-900 disabled:opacity-60"
+            >
+              Convert to job
+            </SubmitButton>
+          </form>
         )}
         {quote.declined_at && (
           <p className="text-sm text-red-600">

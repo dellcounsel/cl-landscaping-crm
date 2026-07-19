@@ -15,6 +15,13 @@ export type QuoteStatus =
   | "approved"
   | "declined"
   | "expired";
+export type RecurFreq = "daily" | "weekly" | "monthly";
+export type JobStatus =
+  | "scheduled"
+  | "in_progress"
+  | "done"
+  | "skipped"
+  | "invoiced";
 
 /** Shape of each entry in quotes.line_items (jsonb). Money in integer cents. */
 export type QuoteLineItem = {
@@ -168,6 +175,132 @@ export type Database = {
           },
         ];
       };
+      recurrences: {
+        Row: {
+          id: string;
+          client_id: string;
+          title: string;
+          freq: RecurFreq;
+          interval_count: number;
+          scheduled_time: string | null;
+          duration_minutes: number | null;
+          assigned_to: string[];
+          notes: string | null;
+          anchor_date: string;
+          until_date: string | null;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          title: string;
+          freq: RecurFreq;
+          interval_count?: number;
+          scheduled_time?: string | null;
+          duration_minutes?: number | null;
+          assigned_to?: string[];
+          notes?: string | null;
+          anchor_date: string;
+          until_date?: string | null;
+          active?: boolean;
+        };
+        Update: {
+          title?: string;
+          freq?: RecurFreq;
+          interval_count?: number;
+          scheduled_time?: string | null;
+          duration_minutes?: number | null;
+          assigned_to?: string[];
+          notes?: string | null;
+          anchor_date?: string;
+          until_date?: string | null;
+          active?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recurrences_client_id_fkey";
+            columns: ["client_id"];
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      jobs: {
+        Row: {
+          id: string;
+          client_id: string;
+          quote_id: string | null;
+          recurrence_id: string | null;
+          title: string;
+          scheduled_date: string;
+          series_date: string | null;
+          scheduled_time: string | null;
+          duration_minutes: number | null;
+          status: JobStatus;
+          assigned_to: string[];
+          notes: string | null;
+          is_exception: boolean;
+          gcal_event_id: string | null;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          quote_id?: string | null;
+          recurrence_id?: string | null;
+          title: string;
+          scheduled_date: string;
+          series_date?: string | null;
+          scheduled_time?: string | null;
+          duration_minutes?: number | null;
+          status?: JobStatus;
+          assigned_to?: string[];
+          notes?: string | null;
+          is_exception?: boolean;
+          gcal_event_id?: string | null;
+          completed_at?: string | null;
+        };
+        Update: {
+          client_id?: string;
+          quote_id?: string | null;
+          recurrence_id?: string | null;
+          title?: string;
+          scheduled_date?: string;
+          series_date?: string | null;
+          scheduled_time?: string | null;
+          duration_minutes?: number | null;
+          status?: JobStatus;
+          assigned_to?: string[];
+          notes?: string | null;
+          is_exception?: boolean;
+          gcal_event_id?: string | null;
+          completed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "jobs_client_id_fkey";
+            columns: ["client_id"];
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jobs_recurrence_id_fkey";
+            columns: ["recurrence_id"];
+            referencedRelation: "recurrences";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jobs_quote_id_fkey";
+            columns: ["quote_id"];
+            referencedRelation: "quotes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: {
@@ -184,6 +317,8 @@ export type Database = {
       user_role: UserRole;
       price_unit: PriceUnit;
       quote_status: QuoteStatus;
+      recur_freq: RecurFreq;
+      job_status: JobStatus;
     };
     CompositeTypes: Record<never, never>;
   };
@@ -194,3 +329,5 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Client = Database["public"]["Tables"]["clients"]["Row"];
 export type PriceItem = Database["public"]["Tables"]["price_items"]["Row"];
 export type Quote = Database["public"]["Tables"]["quotes"]["Row"];
+export type Recurrence = Database["public"]["Tables"]["recurrences"]["Row"];
+export type Job = Database["public"]["Tables"]["jobs"]["Row"];

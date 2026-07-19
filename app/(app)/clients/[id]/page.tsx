@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatCents } from "@/lib/money";
-import { formatDateShort } from "@/lib/dates";
+import { formatDateShort, todayISO } from "@/lib/dates";
 import { quoteStatusClasses, quoteStatusLabel } from "@/lib/quotes";
+import { jobStatusClasses, jobStatusLabel } from "@/lib/jobs";
 import { PhoneIcon, MapPinIcon, PlusIcon } from "../../_components/icons";
 import { ComingSoon } from "../../_components/empty-state";
 import { DeleteClientButton } from "./_components/delete-client-button";
@@ -39,6 +40,17 @@ export default async function ClientDetailPage({
         .select("id, status, total_cents, created_at")
         .eq("client_id", id)
         .order("created_at", { ascending: false })
+    : { data: null };
+
+  const { data: upcomingJobs } = isOwner
+    ? await supabase
+        .from("jobs")
+        .select("id, title, scheduled_date, status")
+        .eq("client_id", id)
+        .gte("scheduled_date", todayISO())
+        .neq("status", "skipped")
+        .order("scheduled_date", { ascending: true })
+        .limit(6)
     : { data: null };
 
   const navAddress = client.property_address || client.billing_address;
@@ -209,7 +221,53 @@ export default async function ClientDetailPage({
           </section>
         )}
 
-        {/* Jobs / invoices / balance — wired up in later milestones. */}
+        {/* Jobs — owner only */}
+        {isOwner && (
+          <section className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Upcoming jobs
+              </h2>
+              <Link
+                href={`/jobs/new?client=${client.id}`}
+                className="inline-flex h-9 items-center gap-1 rounded-lg bg-green-700 px-3 text-sm font-semibold text-white hover:bg-green-800"
+              >
+                <PlusIcon className="h-4 w-4" />
+                New job
+              </Link>
+            </div>
+            {!upcomingJobs || upcomingJobs.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-neutral-300 px-4 py-6 text-center text-sm text-neutral-500 dark:border-neutral-700">
+                No upcoming jobs.
+              </p>
+            ) : (
+              <ul className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+                {upcomingJobs.map((j) => (
+                  <li key={j.id}>
+                    <Link
+                      href={`/jobs/${j.id}`}
+                      className="flex items-center justify-between gap-3 border-b border-neutral-100 px-4 py-3 last:border-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${jobStatusClasses(j.status)}`}
+                        >
+                          {jobStatusLabel(j.status)}
+                        </span>
+                        <span className="text-sm font-medium">{j.title}</span>
+                      </div>
+                      <span className="text-sm text-neutral-500">
+                        {formatDateShort(j.scheduled_date)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {/* Invoices / balance — wired up in later milestones. */}
         {isOwner && (
           <section className="flex flex-col gap-3">
             <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
@@ -218,7 +276,6 @@ export default async function ClientDetailPage({
               </span>
               <ComingSoon milestone="M5" />
             </div>
-            <HistoryCard title="Jobs" milestone="M3" />
             <HistoryCard title="Invoices" milestone="M5" />
           </section>
         )}
